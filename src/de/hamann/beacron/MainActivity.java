@@ -1,13 +1,11 @@
 package de.hamann.beacron;
 
-import java.io.IOException;
-import java.util.UUID;
-
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothServerSocket;
-import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
@@ -51,31 +49,23 @@ public class MainActivity extends ActionBarActivity {
 		}
 		
 		if (!mBluetoothAdapter.isEnabled()) {
-		    Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-		    startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+//		    Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+//		    startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+		    
+			Intent discoverableIntent = new
+			Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+			discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);
+			startActivity(discoverableIntent);
+			
+		    
+		}else{
+			Intent discoverableIntent = new
+			Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+			discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);
+			startActivity(discoverableIntent);
 		}
 		
-		Log.d(TAG,"Local BT:"+mBluetoothAdapter.getAddress());
-		
-		//mBluetoothAdapter.listenUsingInsecureRfcommWithServiceRecord(name, uuid)
-		
-		UUID testUUID = UUID.fromString("38400000-8cf0-11bd-b23e-10b96e4ef00d");
-		
-		try{
-			BluetoothServerSocket listener = mBluetoothAdapter.listenUsingInsecureRfcommWithServiceRecord("TestDevice", testUUID);
-			BluetoothSocket socket = listener.accept();
-			
-			if(socket != null){
-				Log.d(TAG, "connection accepted");
-				Log.d(TAG,"Strength: "+socket.getRemoteDevice().EXTRA_RSSI);
-			} else {
-				Log.e(TAG, "no connection found");
-			}
-			
-		} catch(IOException e){
-			e.printStackTrace();
-		}
-		
+
 		
 		return true;
 	}
@@ -92,30 +82,56 @@ public class MainActivity extends ActionBarActivity {
 		    startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
 		}
 		
-		//mBluetoothAdapter.listenUsingInsecureRfcommWithServiceRecord(name, uuid)
+        // If we're already discovering, stop it
+        if (mBluetoothAdapter.isDiscovering()) {
+        	mBluetoothAdapter.cancelDiscovery();
+        }
 		
-		UUID testUUID = UUID.fromString("38400000-8cf0-11bd-b23e-10b96e4ef00d");
+		mBluetoothAdapter.startDiscovery();
 		
-		try{
-			
-			BluetoothDevice remoteDevice = mBluetoothAdapter.getRemoteDevice("98:D6:F7:6E:9B:11");
-			
-			
-			BluetoothSocket socket= remoteDevice.createInsecureRfcommSocketToServiceRecord(testUUID);
-			
-			
-			if(socket != null){
-				Log.d(TAG, "connection accepted");
-				Log.d(TAG,"Strength Remote: "+socket.getRemoteDevice().EXTRA_RSSI);
-			} else {
-				Log.e(TAG, "no connection found");
-			}
-			
-		} catch(IOException e){
-			e.printStackTrace();
-		}
-		
+        // Register for broadcasts when a device is discovered
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        this.registerReceiver(mReceiver, filter);
 		
 		return true;
 	}
+	
+    // The BroadcastReceiver that listens for discovered devices and
+    // changes the title when discovery is finished
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+        	
+        	//Log.d()
+        	
+            String action = intent.getAction();
+
+            short rssiv=0;
+            
+            // When discovery finds a device
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                // Get the BluetoothDevice object from the Intent
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                
+                rssiv = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE);
+                
+               Log.d(TAG,"["+device.getAddress()+"] - ["+device.getName()+"] - "+rssiv);
+                
+                // If it's already paired, skip it, because it's been listed already
+                
+                
+                if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
+//                    mNewDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
+                }
+            // When discovery is finished, change the Activity title
+            } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+//                setProgressBarIndeterminateVisibility(false);
+//                setTitle(R.string.select_device);
+//                if (mNewDevicesArrayAdapter.getCount() == 0) {
+//                    String noDevices = getResources().getText(R.string.none_found).toString();
+//                    mNewDevicesArrayAdapter.add(noDevices);
+//                }
+            }
+        }
+    };
 }
