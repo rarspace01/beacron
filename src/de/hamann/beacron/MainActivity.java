@@ -6,18 +6,20 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+//import android.os.AsyncTask;
 
 public class MainActivity extends ActionBarActivity {
 	private final static int REQUEST_ENABLE_BT = 1;
-	private static final String TAG = "Beacron";
+	private static final String TAG = "Beacron - MainActivity ";
 
+
+	
 	private BluetoothAdapter mBluetoothAdapter;
 
 	@Override
@@ -68,6 +70,8 @@ public class MainActivity extends ActionBarActivity {
     }
 
 	public boolean onHostButton(View view) {
+		
+
 		BluetoothAdapter mBluetoothAdapter = BluetoothAdapter
 				.getDefaultAdapter();
 		if (mBluetoothAdapter == null) {
@@ -93,6 +97,15 @@ public class MainActivity extends ActionBarActivity {
 			startActivity(discoverableIntent);
 		}
 
+		Log.d(TAG,"Starting Service");
+		
+		// use this to start and trigger a service
+		Intent i= new Intent(this, BeacronLocationUpdateService.class);
+		// potentially add data to the intent
+		
+		i.putExtra("hostBT", mBluetoothAdapter.getAddress());
+		this.startService(i); 
+		
 		return true;
 	}
 
@@ -120,6 +133,7 @@ public class MainActivity extends ActionBarActivity {
 		mBluetoothAdapter.startDiscovery();
 		
 		Log.d(TAG, "started Discovery");
+		
 		
 		return true;
 	}
