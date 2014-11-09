@@ -2,8 +2,17 @@
 <resources>
 
     <string name="app_name">Beacron</string>
-    <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="service_name">BeacronLocationUpdateService</string>
+    <string name="needGPS">Please enable GPS</string>
+    <string name="startHost">Host</string>
+    <string name="stopHost">Stop</string>
+    <string name="title_activity_client">ClientActivity</string>
+    <string name="title_fragment_map">Map</string>
+    <string name="title_fragment_radar">Radar</string>
+    <string name="title_section1">Section 1</string>
+    <string name="title_section2">Section 2</string>
+    <string name="title_section3">Section 3</string>
+    <string name="hello_world">Hello world!</string>
 
 </resources>

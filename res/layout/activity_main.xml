@@ -8,20 +8,12 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="de.hamann.beacron.MainActivity" >
 
-    <TextView
-        android:id="@+id/textView1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/hello_world" />
-
     <Button
         android:id="@+id/btnHost"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/textView1"
-        android:layout_below="@+id/textView1"
         android:onClick="onHostButton"
-        android:text="Host" />
+        android:text="@string/startHost" />
 
     <Button
         android:id="@+id/btnConnect"
@@ -31,5 +23,16 @@
         android:layout_below="@+id/btnHost"
         android:onClick="onConnectButton"
         android:text="Connect" />
+
+    <Button
+        android:id="@+id/btnShare"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/btnHost"
+        android:layout_alignBottom="@+id/btnHost"
+        android:layout_toRightOf="@+id/btnHost"
+        android:enabled="false"
+        android:onClick="onShareButton"
+        android:text="Share" />
 
 </RelativeLayout>

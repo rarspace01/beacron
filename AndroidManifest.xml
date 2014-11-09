@@ -33,9 +33,18 @@
         </activity>
 
         <service
-            android:name="BeacronLocationUpdateService"
+            android:name=".BeacronLocationUpdateService"
             android:label="@string/service_name" >
         </service>
+
+        <activity
+            android:name=".ClientActivity"
+            android:label="@string/title_activity_client"
+            android:parentActivityName=".MainActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="de.hamann.beacron.MainActivity" />
+        </activity>
     </application>
 
 </manifest>

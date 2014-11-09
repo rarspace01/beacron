@@ -6,17 +6,27 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.location.LocationManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
 //import android.os.AsyncTask;
 
 public class MainActivity extends ActionBarActivity {
-	private final static int REQUEST_ENABLE_BT = 1;
 	private static final String TAG = "Beacron - MainActivity ";
+	private final static int REQUEST_ENABLE_BT = 1;
+	
+	private boolean onHostButtonIsStart=true;
+	private LocationManager locationManager;
+	
+	private Button onHostButton;
+	private Button onShareButton;
 
 
 	
@@ -26,6 +36,8 @@ public class MainActivity extends ActionBarActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		onHostButton = (Button)findViewById(R.id.btnHost);
+		onShareButton = (Button)findViewById(R.id.btnShare);
 		
       // Register for broadcasts when a device is discovered
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
@@ -35,6 +47,19 @@ public class MainActivity extends ActionBarActivity {
         filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         this.registerReceiver(mReceiver, filter);
 		
+		//check for GPS & network location provider first
+		
+	    locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+	    
+		// enable GPS
+
+		if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+			Toast.makeText(this, getResources().getString(R.string.needGPS),
+                    Toast.LENGTH_LONG).show();
+			Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+		       startActivity(intent);
+		}
+        
 	}
 
 	@Override
@@ -71,18 +96,23 @@ public class MainActivity extends ActionBarActivity {
 
 	public boolean onHostButton(View view) {
 		
+		onHostButton.setEnabled(false);
+		
+		if(onHostButtonIsStart){
+			
+		onShareButton.setEnabled(true);	
+		
+		onHostButton.setText(R.string.stopHost);	
+		
+		// do the BT stuff
 
 		BluetoothAdapter mBluetoothAdapter = BluetoothAdapter
 				.getDefaultAdapter();
 		if (mBluetoothAdapter == null) {
 			// Device does not support Bluetooth
-		}
+		}else{
 
 		if (!mBluetoothAdapter.isEnabled()) {
-			// Intent enableBtIntent = new
-			// Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-			// startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-
 			Intent discoverableIntent = new Intent(
 					BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
 			discoverableIntent.putExtra(
@@ -105,6 +135,25 @@ public class MainActivity extends ActionBarActivity {
 		
 		i.putExtra("hostBT", mBluetoothAdapter.getAddress());
 		this.startService(i); 
+		}
+		
+		}else{
+			onHostButton.setText(R.string.startHost);
+			onShareButton.setEnabled(false);
+			//stop service
+			// use this to start and trigger a service
+			Intent i= new Intent(this, BeacronLocationUpdateService.class);
+			// potentially add data to the intent
+			
+			this.stopService(i); 
+		}
+		
+		//change Button State
+		onHostButtonIsStart=!onHostButtonIsStart;
+		
+		onHostButton.setEnabled(true);
+		
+		
 		
 		return true;
 	}
@@ -115,25 +164,29 @@ public class MainActivity extends ActionBarActivity {
 		mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 		if (mBluetoothAdapter == null) {
 			// Device does not support Bluetooth
-		}
+		}else{
 
 		if (!mBluetoothAdapter.isEnabled()) {
 			Intent enableBtIntent = new Intent(
 					BluetoothAdapter.ACTION_REQUEST_ENABLE);
 			startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
 		}
-
-		// If we're already discovering, stop it
-		if (mBluetoothAdapter.isDiscovering()) {
-			mBluetoothAdapter.cancelDiscovery();
+		
 		}
 
-		Log.d(TAG, "starting Discovery");
-
-		mBluetoothAdapter.startDiscovery();
+//		// If we're already discovering, stop it
+//		if (mBluetoothAdapter.isDiscovering()) {
+//			mBluetoothAdapter.cancelDiscovery();
+//		}
+//
+//		Log.d(TAG, "starting Discovery");
+//
+//		mBluetoothAdapter.startDiscovery();
+//		
+//		Log.d(TAG, "started Discovery");
 		
-		Log.d(TAG, "started Discovery");
-		
+		Intent i = new Intent(this, ClientActivity.class);
+        this.startActivity(i);
 		
 		return true;
 	}
@@ -208,4 +261,27 @@ public class MainActivity extends ActionBarActivity {
 			}
 		}
 	};
+	
+	public void onShareButton(View view) {
+
+		Intent sendIntent = new Intent();
+		
+		BluetoothAdapter mBluetoothAdapter = BluetoothAdapter
+				.getDefaultAdapter();
+		
+		if (mBluetoothAdapter != null) {
+			
+			sendIntent.setAction(Intent.ACTION_SEND);
+			sendIntent.putExtra(Intent.EXTRA_TEXT, "Somebody invited you to a Beacron Session - follow the URL: \n"+
+					mBluetoothAdapter.getAddress().replace(":", "")
+					+ " Greetings");
+			sendIntent.setType("text/plain");
+			// sendIntent.setType("text/html");
+			startActivity(sendIntent);
+		}
+
+		
+
+
+	}
 }

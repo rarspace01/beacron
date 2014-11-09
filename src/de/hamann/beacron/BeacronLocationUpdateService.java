@@ -15,9 +15,9 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 
 import android.app.Service;
+import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
-import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -25,12 +25,14 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.Toast;
 
 public class BeacronLocationUpdateService extends Service implements LocationListener {
 
 	private LocationManager locationManager;
 	private Bundle intentExtras;
 	private String localBTaddress="";
+	private long lastUpdate=0;
 	
 	private static final String TAG = "Beacron - BeacronLocationUpdateService ";
 
@@ -39,25 +41,24 @@ public class BeacronLocationUpdateService extends Service implements LocationLis
 	  @Override
 	  public int onStartCommand(Intent intent, int flags, int startId) {
 	    
+		  Log.d(TAG, "starting service");
+		  
 		intentExtras = intent.getExtras();
 		if(intentExtras != null){
 			localBTaddress = intentExtras.getString("hostBT");
 		}
 		  
-		Criteria crit = new Criteria();
-	    crit.setAccuracy(Criteria.ACCURACY_FINE);
-	    
 	    locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 	    
 		// start location updates
-		//locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
 		if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
 			locationManager.requestLocationUpdates(
-					LocationManager.GPS_PROVIDER, 5000, 0, this);
-		}else if(locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+					LocationManager.GPS_PROVIDER, 60000, 20, this);
+		}
+		if(locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
 			locationManager.requestLocationUpdates(
-					LocationManager.NETWORK_PROVIDER, 5000, 0, this);
+					LocationManager.NETWORK_PROVIDER, 10000, 0, this);
 		}
 		
 		Log.d(TAG, "Going to report following BT HW address: "+localBTaddress);
@@ -76,8 +77,16 @@ public class BeacronLocationUpdateService extends Service implements LocationLis
 	public void onLocationChanged(Location location) {
 		
 		// start async task
+		Toast.makeText(this, "DEBUG: "+location.getProvider()+" - "+location.getAccuracy(),
+                Toast.LENGTH_LONG).show();		
 		
-		new updateLocationTask().execute(location);
+		//check if lastUpdate was at least 10 seconds ago
+		if(System.currentTimeMillis()>(lastUpdate+10*1000)){
+			
+			new updateLocationTask().execute(location);
+			lastUpdate=System.currentTimeMillis();
+		}
+		
 
 		
 	}
@@ -128,7 +137,9 @@ public class BeacronLocationUpdateService extends Service implements LocationLis
 		        // Execute HTTP Post Request
 		        String responseBody = httpclient.execute(httppost,responseHandler);
 		        
-		        Log.d(TAG,"Content: ["+responseBody+"]");
+		        
+		        
+		        Log.d(TAG,"Content ["+location.getProvider()+"]: ["+responseBody+"]");
 		        
 		    } catch (ClientProtocolException e) {
 		        // TODO Auto-generated catch block
@@ -139,11 +150,21 @@ public class BeacronLocationUpdateService extends Service implements LocationLis
 		    return null;
 		}
 
-//		protected void onPostExecute() {
-//			//after
-//		}
-
 	}
+	
+	@Override
+	public void onDestroy(){
+		// Remove the listener we previously added
+		Log.d(TAG,"stopping the service");
+		locationManager.removeUpdates(this);
+		//disable BT
+		BluetoothAdapter mBluetoothAdapter = BluetoothAdapter
+				.getDefaultAdapter();
+		if (mBluetoothAdapter != null) {
+			mBluetoothAdapter.disable();
+		}
+	}
+	
 	
 }
 
