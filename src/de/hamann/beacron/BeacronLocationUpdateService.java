@@ -46,6 +46,7 @@ public class BeacronLocationUpdateService extends Service implements LocationLis
 		intentExtras = intent.getExtras();
 		if(intentExtras != null){
 			localBTaddress = intentExtras.getString("hostBT");
+			localBTaddress = localBTaddress.replace(":","");
 		}
 		  
 	    locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);

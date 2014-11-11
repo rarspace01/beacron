@@ -272,8 +272,8 @@ public class MainActivity extends ActionBarActivity {
 		if (mBluetoothAdapter != null) {
 			
 			sendIntent.setAction(Intent.ACTION_SEND);
-			sendIntent.putExtra(Intent.EXTRA_TEXT, "Somebody invited you to a Beacron Session - follow the URL: \n"+
-					mBluetoothAdapter.getAddress().replace(":", "")
+			sendIntent.putExtra(Intent.EXTRA_TEXT, "Somebody invited you to a Beacron Session - follow the URL: http://dcdn.de/beacron/map.php?host="+
+					mBluetoothAdapter.getAddress().replace(":", "")+" "
 					+ " Greetings");
 			sendIntent.setType("text/plain");
 			// sendIntent.setType("text/html");

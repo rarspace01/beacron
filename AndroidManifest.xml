@@ -39,11 +39,17 @@
 
         <activity
             android:name=".ClientActivity"
-            android:label="@string/title_activity_client"
-            android:parentActivityName=".MainActivity" >
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="de.hamann.beacron.MainActivity" />
+            android:label="@string/title_activity_client">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+               	<data android:scheme="http"/>
+                <data android:scheme="https"/>
+                <data android:host="dcdn.de"/>
+                <data android:host="www.dcdn.de"/>
+                <data android:pathPattern=".*"/>
+            </intent-filter>
         </activity>
     </application>
 

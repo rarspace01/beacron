@@ -1,16 +1,36 @@
 package de.hamann.beacron;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
+import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.osmdroid.DefaultResourceProxyImpl;
+import org.osmdroid.ResourceProxy;
 import org.osmdroid.api.IMapController;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.ItemizedIconOverlay;
+import org.osmdroid.views.overlay.OverlayItem;
+import org.osmdroid.views.overlay.OverlayItem.HotspotPlace;
 
 import android.content.Context;
+import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -29,6 +49,8 @@ import android.view.ViewGroup;
 public class ClientActivity extends ActionBarActivity implements
 		ActionBar.TabListener {
 
+	private static final String TAG = "Beacron - ClientActivity ";
+
 	/**
 	 * The {@link android.support.v4.view.PagerAdapter} that will provide
 	 * fragments for each of the sections. We use a {@link FragmentPagerAdapter}
@@ -42,12 +64,40 @@ public class ClientActivity extends ActionBarActivity implements
 	 * The {@link ViewPager} that will host the section contents.
 	 */
 	ViewPager mViewPager;
-
+	private String intentURL;
+	private String hostAddress;
+	private View lMapView_;
+	
+	private OverlayItem curLocItem_;
+	private MyItemizedOverlay itemizedOverlay;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_client);
 
+		// store Intent-Data
+		Intent localIntent = getIntent();
+		
+		if(localIntent != null){
+			if(localIntent.getAction() == Intent.ACTION_VIEW){
+				intentURL = localIntent.getDataString();
+				Log.d(TAG,"got URL: "+intentURL);
+				
+				intentURL = intentURL.substring(intentURL.indexOf("map.php?host=")+"map.php?host=".length());
+				
+				if(intentURL.matches("[0-9A-F]{12,12}")){
+				
+				hostAddress = intentURL;
+				
+				}else{
+					Log.d(TAG,"tried to parse hostadress: "+intentURL);
+				}
+				
+			}
+			Log.d(TAG,"got smth");
+		}
+		
 		// Set up the action bar.
 		final ActionBar actionBar = getSupportActionBar();
 		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
@@ -82,6 +132,13 @@ public class ClientActivity extends ActionBarActivity implements
 					.setText(mSectionsPagerAdapter.getPageTitle(i))
 					.setTabListener(this));
 		}
+		
+		ResourceProxy mResourceProxy = new DefaultResourceProxyImpl(
+		getApplicationContext());
+		
+        itemizedOverlay = new MyItemizedOverlay(new ArrayList<OverlayItem>(),
+                null, mResourceProxy);
+		
 	}
 
 	@Override
@@ -228,6 +285,13 @@ public class ClientActivity extends ActionBarActivity implements
 			
 			}
 			
+			if(hostAddress != null){
+				Log.d(TAG,"we would start to retrieve the location from the host from the server");
+				new retrieveHostLocation().execute(hostAddress);
+			}
+			
+			lMapView_ = rootView;
+			
 			return rootView;
 		}
 	}
@@ -252,6 +316,85 @@ public class ClientActivity extends ActionBarActivity implements
 					false);
 			return rootView;
 		}
+	}
+	
+	private class retrieveHostLocation extends AsyncTask<String, Void, GeoPoint> {
+
+		@Override
+		protected GeoPoint doInBackground(String... params) {
+			GeoPoint localPoint = null;
+			
+			String[] latlong;
+			double lat,lng;
+			
+			String hostAddress = params[0];
+			
+
+			// do a post request to the site
+			
+			Log.d(TAG, "do a post request to the site");
+			
+			// Create a new HttpClient and Post Header
+		    HttpClient httpclient = new DefaultHttpClient();
+		    HttpPost httppost = new HttpPost("http://dcdn.de/beacron/map.php");
+
+		    try {
+		        // Add your data
+		        List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
+		        ResponseHandler<String> responseHandler=new BasicResponseHandler();
+		        nameValuePairs.add(new BasicNameValuePair("host", hostAddress));
+		        httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+
+		        // Execute HTTP Post Request
+		        String responseBody = httpclient.execute(httppost,responseHandler);
+		        
+		        if(responseBody.matches("[0-9]{1,3}[.][0-9]+[/][0-9]{1,3}[.][0-9]+")){
+		        	latlong = responseBody.split("/");
+		        	
+		        	if(latlong != null){
+		        		lat = Double.parseDouble(latlong[0]);
+		        		lng = Double.parseDouble(latlong[1]);
+		        		localPoint = new GeoPoint(lat, lng);
+		        	}
+		        	
+		        }
+		        
+		        Log.d(TAG,"Content ["+responseBody+"]");
+		        
+		    } catch (ClientProtocolException e) {
+		        // TODO Auto-generated catch block
+		    } catch (IOException e) {
+		        // TODO Auto-generated catch block
+		    }
+		    
+		    return localPoint;
+		}
+		
+		protected void onPostExecute(GeoPoint finalPoint) {
+			
+			MapView mapView_ = (MapView) lMapView_.findViewById(R.id.mapview);
+			mapView_.getController().setCenter(finalPoint);
+			
+			Drawable newMarker = getResources().getDrawable(R.drawable.ic_launcher);
+			newMarker.setAlpha(155);
+			curLocItem_ = new OverlayItem("Host location",
+					"Host2 Location", finalPoint);
+			curLocItem_.setMarker(newMarker);
+			curLocItem_.setMarkerHotspot(HotspotPlace.CENTER);
+			
+			itemizedOverlay.addItem(curLocItem_);
+			
+			mapView_.getOverlays().add(itemizedOverlay);
+			
+			//create overlay
+			
+
+			
+			
+			lMapView_.invalidate();
+			
+		}
+
 	}
 
 }
