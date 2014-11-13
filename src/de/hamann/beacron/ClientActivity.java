@@ -20,7 +20,6 @@ import org.osmdroid.api.IMapController;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
-import org.osmdroid.views.overlay.ItemizedIconOverlay;
 import org.osmdroid.views.overlay.OverlayItem;
 import org.osmdroid.views.overlay.OverlayItem.HotspotPlace;
 
@@ -155,6 +154,15 @@ public class ClientActivity extends ActionBarActivity implements
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
 		if (id == R.id.action_settings) {
+			return true;
+		} else if (id == R.id.menu_refresh){
+			
+			// start refresh if hostadress ist not empty
+			if(hostAddress != null){
+				Log.d(TAG,"we would start to retrieve the location from the host from the server");
+				new retrieveHostLocation().execute(hostAddress);
+			}
+			
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
@@ -348,7 +356,7 @@ public class ClientActivity extends ActionBarActivity implements
 		        // Execute HTTP Post Request
 		        String responseBody = httpclient.execute(httppost,responseHandler);
 		        
-		        if(responseBody.matches("[0-9]{1,3}[.][0-9]+[/][0-9]{1,3}[.][0-9]+")){
+		        if(responseBody.matches("[0-9]{1,3}([.][0-9]+)*[/][0-9]{1,3}([.][0-9]+)*")){
 		        	latlong = responseBody.split("/");
 		        	
 		        	if(latlong != null){
@@ -383,6 +391,8 @@ public class ClientActivity extends ActionBarActivity implements
 			curLocItem_.setMarkerHotspot(HotspotPlace.CENTER);
 			
 			itemizedOverlay.addItem(curLocItem_);
+			
+			mapView_.getOverlays().clear();
 			
 			mapView_.getOverlays().add(itemizedOverlay);
 			

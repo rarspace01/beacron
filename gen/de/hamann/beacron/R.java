@@ -1116,6 +1116,7 @@ containing a value of this type.
         public static final int listMode=0x7f090006;
         public static final int list_item=0x7f090029;
         public static final int mapview=0x7f090040;
+        public static final int menu_refresh=0x7f090044;
         public static final int middle=0x7f090018;
         public static final int never=0x7f090012;
         public static final int none=0x7f090019;
@@ -1254,6 +1255,7 @@ containing a value of this type.
         public static final int app_name=0x7f0a000d;
         public static final int hello_world=0x7f0a0019;
         public static final int needGPS=0x7f0a0010;
+        public static final int refresh=0x7f0a001a;
         public static final int service_name=0x7f0a000f;
         public static final int startHost=0x7f0a0011;
         public static final int stopHost=0x7f0a0012;
