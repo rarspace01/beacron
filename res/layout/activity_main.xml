@@ -16,15 +16,6 @@
         android:text="@string/startHost" />
 
     <Button
-        android:id="@+id/btnConnect"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/btnHost"
-        android:layout_below="@+id/btnHost"
-        android:onClick="onConnectButton"
-        android:text="Connect" />
-
-    <Button
         android:id="@+id/btnShare"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -33,6 +24,6 @@
         android:layout_toRightOf="@+id/btnHost"
         android:enabled="false"
         android:onClick="onShareButton"
-        android:text="Share" />
+        android:text="@string/share" />
 
 </RelativeLayout>
