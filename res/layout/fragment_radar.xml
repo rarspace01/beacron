@@ -13,15 +13,30 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 
-    <TextView
-        android:id="@+id/textView1"
+    <Button
+        android:id="@+id/btnRadar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/section_label"
-        android:layout_marginLeft="40dp"
-        android:layout_marginTop="52dp"
-        android:layout_toRightOf="@+id/section_label"
-        android:text="Radar Text"
-        android:textAppearance="?android:attr/textAppearanceMedium" />
+        android:layout_alignTop="@+id/section_label"
+        android:layout_centerHorizontal="true"
+        android:onClick="onRadarButton"
+        android:text="@string/abc_searchview_description_search" />
+
+    <TextView
+        android:id="@+id/txtRadar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/btnRadar"
+        android:layout_centerHorizontal="true"
+        android:text="@string/app_name" />
+
+    <ProgressBar
+        android:id="@+id/pbDistance"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/txtRadar" />
 
 </RelativeLayout>

@@ -23,8 +23,12 @@ import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.OverlayItem;
 import org.osmdroid.views.overlay.OverlayItem.HotspotPlace;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.drawable.Drawable;
 import android.location.Criteria;
 import android.location.Location;
@@ -44,12 +48,15 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 public class ClientActivity extends ActionBarActivity implements
 		ActionBar.TabListener {
 
 	private static final String TAG = "Beacron - ClientActivity ";
-
+	private final static int REQUEST_ENABLE_BT = 1;
 	/**
 	 * The {@link android.support.v4.view.PagerAdapter} that will provide
 	 * fragments for each of the sections. We use a {@link FragmentPagerAdapter}
@@ -66,9 +73,17 @@ public class ClientActivity extends ActionBarActivity implements
 	private String intentURL;
 	private String hostAddress;
 	private View lMapView_;
+	private ProgressBar mProgress_;
+	private Button btnSearch_;
+	private TextView txtRadar_;
+	
+	private boolean isDiscovering_=false;
+
 	
 	private OverlayItem curLocItem_;
 	private MyItemizedOverlay itemizedOverlay;
+	
+	private BluetoothAdapter mBluetoothAdapter;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -137,6 +152,14 @@ public class ClientActivity extends ActionBarActivity implements
 		
         itemizedOverlay = new MyItemizedOverlay(new ArrayList<OverlayItem>(),
                 null, mResourceProxy);
+        
+        // Register for broadcasts when a device is discovered
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        this.registerReceiver(mReceiver, filter);
+
+        // Register for broadcasts when discovery has finished
+        filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        this.registerReceiver(mReceiver, filter);
 		
 	}
 
@@ -310,7 +333,7 @@ public class ClientActivity extends ActionBarActivity implements
 	public class RadarFragment extends Fragment {
 
 		private static final String ARG_SECTION_NUMBER = "section_number";
-
+		
 		public RadarFragment(int sectionNumber) {
 			Bundle args = new Bundle();
 			args.putInt(ARG_SECTION_NUMBER, sectionNumber);
@@ -322,6 +345,16 @@ public class ClientActivity extends ActionBarActivity implements
 				Bundle savedInstanceState) {
 			View rootView = inflater.inflate(R.layout.fragment_radar, container,
 					false);
+			
+			mProgress_ = (ProgressBar) rootView.findViewById(R.id.pbDistance);
+			
+			btnSearch_ = (Button) rootView.findViewById(R.id.btnRadar);
+			
+			txtRadar_ = (TextView) rootView.findViewById(R.id.txtRadar);
+			
+			mProgress_.setEnabled(false);
+			//mProgress_.setProgress(0);
+			
 			return rootView;
 		}
 	}
@@ -380,6 +413,8 @@ public class ClientActivity extends ActionBarActivity implements
 		
 		protected void onPostExecute(GeoPoint finalPoint) {
 			
+			if(finalPoint != null){
+			
 			MapView mapView_ = (MapView) lMapView_.findViewById(R.id.mapview);
 			mapView_.getController().setCenter(finalPoint);
 			
@@ -392,19 +427,150 @@ public class ClientActivity extends ActionBarActivity implements
 			
 			itemizedOverlay.addItem(curLocItem_);
 			
+			// remove all overlays
 			mapView_.getOverlays().clear();
 			
+			// add beacron host
 			mapView_.getOverlays().add(itemizedOverlay);
 			
-			//create overlay
-			
-
-			
+			// TODO: add own location
 			
 			lMapView_.invalidate();
+			
+			}
 			
 		}
 
 	}
+	
+	public boolean onRadarButton(View view) {
 
+
+		
+		//start BT stuff
+		mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+		if (mBluetoothAdapter == null) {
+			// Device does not support Bluetooth
+		}else{
+			
+		if(isDiscovering_){
+			btnSearch_.setText("Search");
+			mBluetoothAdapter.cancelDiscovery();
+			isDiscovering_ = false;
+		}else{
+			isDiscovering_ = true;
+			btnSearch_.setText("Stop");
+			
+			
+
+		if (!mBluetoothAdapter.isEnabled()) {
+			Intent enableBtIntent = new Intent(
+					BluetoothAdapter.ACTION_REQUEST_ENABLE);
+			startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+		}
+		
+		
+
+		// If we're already discovering, stop it
+		if (mBluetoothAdapter.isDiscovering()) {
+			mBluetoothAdapter.cancelDiscovery();
+		}
+
+		Log.d(TAG, "starting Discovery");
+
+		mBluetoothAdapter.startDiscovery();
+		
+		Log.d(TAG, "started Discovery");
+		
+		}
+		
+		}
+		
+		return true;
+	}
+	
+	// The BroadcastReceiver that listens for discovered devices and
+		// changes the title when discovery is finished
+		private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+			@Override
+			public void onReceive(Context context, Intent intent) {
+
+				String action = intent.getAction();
+				
+				Log.d(TAG,
+						"BT broadcast recieved Action:["+action+"]");
+				
+				short rssiv = 0;
+				double drssiv = 0.0;
+				boolean isFound = false;
+
+				// When discovery finds a device
+				if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+					// Get the BluetoothDevice object from the Intent
+					BluetoothDevice device = intent
+							.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+
+					rssiv = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI,
+							Short.MIN_VALUE);
+
+					drssiv = (double)rssiv;
+					
+					Log.d(TAG,
+							"[" + device.getAddress() + "] - [" + device.getName()
+									+ "] - [" + drssiv+"]");
+
+					// check for BT HW Adress
+					if(hostAddress.equals(device.getAddress().replace(":", ""))){
+						
+						mProgress_.setEnabled(true);
+						
+						Log.d(TAG,"PPCT: "+(drssiv*(100.0/185.0)));
+						Log.d(TAG,"PCT: "+(116.0+drssiv*(100.0/185.0)));
+						
+						mProgress_.setProgress((int)Math.min(116+drssiv*(100.0/185.0), 100.0));
+						
+						Log.d(TAG,"Found remote mate");
+						
+						txtRadar_.setText(hostAddress+" - "+drssiv);
+						
+						isFound=true;
+					}
+
+					if (isFound) {
+
+						mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+						if (mBluetoothAdapter == null) {
+							// Device does not support Bluetooth
+						}
+
+						Log.d(TAG, "Stopping BT discovery");
+						mBluetoothAdapter.isDiscovering();
+						
+						// If we're already discovering, stop it
+//						if (mBluetoothAdapter.isDiscovering()) {
+//							Log.d(TAG, "Stopping BT discovery");
+//							mBluetoothAdapter.cancelDiscovery();
+//						}
+						
+//						Log.d(TAG, "Starting BT discovery again");
+//						mBluetoothAdapter.startDiscovery();
+
+					}
+
+				} else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED
+						.equals(action)) {
+					Log.d(TAG,"finished discovery");
+					
+					isDiscovering_ = false;
+					btnSearch_.setText("Search");
+					
+				}
+			}
+		};
+
+		
+		protected void onDestroy() {
+	        // Unregister broadcast listeners
+	        this.unregisterReceiver(mReceiver);
+		};
 }

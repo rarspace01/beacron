@@ -1,11 +1,8 @@
 package de.hamann.beacron;
 
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -20,7 +17,7 @@ import android.widget.Toast;
 
 public class MainActivity extends ActionBarActivity {
 	private static final String TAG = "Beacron - MainActivity ";
-	private final static int REQUEST_ENABLE_BT = 1;
+
 	
 	private boolean onHostButtonIsStart=true;
 	private LocationManager locationManager;
@@ -38,14 +35,6 @@ public class MainActivity extends ActionBarActivity {
 		setContentView(R.layout.activity_main);
 		onHostButton = (Button)findViewById(R.id.btnHost);
 		onShareButton = (Button)findViewById(R.id.btnShare);
-		
-      // Register for broadcasts when a device is discovered
-        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        this.registerReceiver(mReceiver, filter);
-
-        // Register for broadcasts when discovery has finished
-        filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-        this.registerReceiver(mReceiver, filter);
 		
 		//check for GPS & network location provider first
 		
@@ -90,8 +79,6 @@ public class MainActivity extends ActionBarActivity {
         	mBluetoothAdapter.cancelDiscovery();
         }
 
-        // Unregister broadcast listeners
-        this.unregisterReceiver(mReceiver);
     }
 
 	public boolean onHostButton(View view) {
@@ -158,38 +145,6 @@ public class MainActivity extends ActionBarActivity {
 		return true;
 	}
 
-	public boolean onConnectButton(View view) {
-
-		//start BT stuff
-		mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-		if (mBluetoothAdapter == null) {
-			// Device does not support Bluetooth
-		}else{
-
-		if (!mBluetoothAdapter.isEnabled()) {
-			Intent enableBtIntent = new Intent(
-					BluetoothAdapter.ACTION_REQUEST_ENABLE);
-			startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-		}
-		
-		}
-
-//		// If we're already discovering, stop it
-//		if (mBluetoothAdapter.isDiscovering()) {
-//			mBluetoothAdapter.cancelDiscovery();
-//		}
-//
-//		Log.d(TAG, "starting Discovery");
-//
-//		mBluetoothAdapter.startDiscovery();
-//		
-//		Log.d(TAG, "started Discovery");
-		
-		Intent i = new Intent(this, ClientActivity.class);
-        this.startActivity(i);
-		
-		return true;
-	}
 
 //	private class RetrieveRouteTask extends AsyncTask<String, Void, Void> {
 //
@@ -209,58 +164,7 @@ public class MainActivity extends ActionBarActivity {
 //
 //	}
 
-	// The BroadcastReceiver that listens for discovered devices and
-	// changes the title when discovery is finished
-	private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-		@Override
-		public void onReceive(Context context, Intent intent) {
-
-			String action = intent.getAction();
-			
-			Log.d(TAG,
-					"BT broadcast recieved Action:["+action+"]");
-			
-			short rssiv = 0;
-			boolean isFound = false;
-
-			// When discovery finds a device
-			if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-				// Get the BluetoothDevice object from the Intent
-				BluetoothDevice device = intent
-						.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-
-				rssiv = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI,
-						Short.MIN_VALUE);
-
-				Log.d(TAG,
-						"[" + device.getAddress() + "] - [" + device.getName()
-								+ "] - " + rssiv);
-
-				// check for BT HW Adress
-
-				if (isFound) {
-
-					mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-					if (mBluetoothAdapter == null) {
-						// Device does not support Bluetooth
-					}
-
-					// If we're already discovering, stop it
-					if (mBluetoothAdapter.isDiscovering()) {
-						Log.d(TAG, "Stopping BT discovery");
-						mBluetoothAdapter.cancelDiscovery();
-					}
-					Log.d(TAG, "Starting BT discovery again");
-					mBluetoothAdapter.startDiscovery();
-
-				}
-
-			} else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED
-					.equals(action)) {
-				Log.d(TAG,"finished discovery");
-			}
-		}
-	};
+	
 	
 	public void onShareButton(View view) {
 

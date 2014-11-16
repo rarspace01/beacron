@@ -7,7 +7,7 @@
     <string name="needGPS">Please enable GPS</string>
     <string name="startHost">Host</string>
     <string name="stopHost">Stop</string>
-    <string name="title_activity_client">ClientActivity</string>
+    <string name="title_activity_client">Beacron</string>
     <string name="title_fragment_map">Map</string>
     <string name="title_fragment_radar">Radar</string>
     <string name="title_section1">Section 1</string>
