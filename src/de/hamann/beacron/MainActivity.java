@@ -25,7 +25,6 @@ public class MainActivity extends ActionBarActivity {
 	private Button onHostButton;
 	private Button onShareButton;
 
-
 	
 	private BluetoothAdapter mBluetoothAdapter;
 
@@ -33,6 +32,7 @@ public class MainActivity extends ActionBarActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		
 		onHostButton = (Button)findViewById(R.id.btnHost);
 		onShareButton = (Button)findViewById(R.id.btnShare);
 		
