@@ -55,11 +55,11 @@ public class BeacronLocationUpdateService extends Service implements LocationLis
 
 		if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
 			locationManager.requestLocationUpdates(
-					LocationManager.GPS_PROVIDER, 60000, 20, this);
+					LocationManager.GPS_PROVIDER, 30*60*1000, 20, this);
 		}
 		if(locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
 			locationManager.requestLocationUpdates(
-					LocationManager.NETWORK_PROVIDER, 10000, 0, this);
+					LocationManager.NETWORK_PROVIDER, 10*60*1000, 0, this);
 		}
 		
 		Log.d(TAG, "Going to report following BT HW address: "+localBTaddress);

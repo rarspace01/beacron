@@ -570,6 +570,7 @@ public class ClientActivity extends ActionBarActivity implements
 
 		
 		protected void onDestroy() {
+			super.onDestroy();
 	        // Unregister broadcast listeners
 	        this.unregisterReceiver(mReceiver);
 		};
